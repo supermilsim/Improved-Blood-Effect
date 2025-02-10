@@ -1,0 +1,13 @@
+MatPBRDecal {
+ WetnessScale 0.9
+ AlphaMul 1.343
+ BlendMode AlphaBlend
+ CavityFromAO 0
+ BCRMap "{4C75506F9E26F194}Assets/Decals/Asphalt/Damage/Data/Blood/Blood_12_BCR.edds"
+ OpacityMap "{3F4ADBC9BD76DD81}Assets/Decals/Asphalt/Damage/Data/Blood/blood_12_Mask.edds"
+ NMOMap "{74ADEBFD4751A30A}Assets/Decals/Asphalt/Damage/Data/Blood/Blood_12_NMO.edds"
+ HeightMap "{F1AFD1E07C746B67}Assets/Decals/Asphalt/Damage/Data/Decal_Asphalt_Cracks_03_H.edds"
+ ParallaxScale 0.013
+ ParallaxMidlePlane 0.5
+ WaterAccumulation 1.2
+}

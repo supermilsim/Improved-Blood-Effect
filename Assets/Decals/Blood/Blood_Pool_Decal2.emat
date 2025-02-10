@@ -1,0 +1,20 @@
+MatPBRDecal {
+ Color 1 0 0 1
+ SpecularIBL 0.168 0.168 0.168 1
+ ZBias 1
+ SpecularMul 0.1
+ WetnessScale 0.9
+ AlphaMul 1.343
+ BlendMode AlphaBlend
+ RoughnessScale 2.456
+ DielectricReflectance 0.02
+ CavityFromAO 0
+ BCRMap "{8CA577598387CA95}Assets/Decals/Blood/Blood/Blood_18_BCR.edds"
+ OpacityMap "{C3920A018B138963}Assets/Decals/Blood/Blood/blood_18_Mask.edds"
+ NMOMap "{B47DCCCB5AF0980B}Assets/Decals/Blood/Blood/Blood_18_NMO.edds"
+ DecalCategory Static
+ HeightMap "{F1AFD1E07C746B67}Assets/Decals/Asphalt/Damage/Data/Decal_Asphalt_Cracks_03_H.edds"
+ ParallaxScale 0.013
+ ParallaxMidlePlane 0.5
+ WaterAccumulation 1.2
+}

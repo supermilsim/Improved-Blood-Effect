@@ -1,0 +1,7 @@
+MatPBRDecal : "{3403E3EEF236DDB4}Assets/Decals/Blood/Decal_Blood8.emat" {
+ Color 0.263 0.263 0.263 1
+ ZBias 1
+ SortBias 1
+ RoughnessScale 2.614
+ DecalCategory Static
+}

@@ -1,0 +1,17 @@
+MetaFileClass {
+ Name "{4F0E6A2ECCBC903E}Assets/Decals/Character/Impact/Data/Decal_blood_puddles.emat"
+ Configurations {
+  EMATResourceClass PC {
+  }
+  EMATResourceClass XBOX_ONE : PC {
+  }
+  EMATResourceClass XBOX_SERIES : PC {
+  }
+  EMATResourceClass PS4 : PC {
+  }
+  EMATResourceClass PS5 : PC {
+  }
+  EMATResourceClass HEADLESS : PC {
+  }
+ }
+}

@@ -1,0 +1,17 @@
+MetaFileClass {
+ Name "{A18DC91C12B108C5}Assets/Decals/BloodDynamicToStatic/Blood_Droplet_Decal2.emat"
+ Configurations {
+  EMATResourceClass PC {
+  }
+  EMATResourceClass XBOX_ONE : PC {
+  }
+  EMATResourceClass XBOX_SERIES : PC {
+  }
+  EMATResourceClass PS4 : PC {
+  }
+  EMATResourceClass PS5 : PC {
+  }
+  EMATResourceClass HEADLESS : PC {
+  }
+ }
+}

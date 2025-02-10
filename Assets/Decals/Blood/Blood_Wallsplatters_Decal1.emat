@@ -1,0 +1,18 @@
+MatPBRDecal {
+ Color 0.054 0 0 1
+ ZBias 1
+ Cull none
+ SpecularMul 0
+ WetnessScale 0.9
+ AlphaMul 1.343
+ BlendMode AlphaBlend
+ RoughnessScale 2
+ DielectricReflectance 0.02
+ CavityFromAO 0
+ BCRMap "{28E57347AD1AF106}Imports/PNG/AI/aiGen05.edds"
+ OpacityMap "{CF7858DBCCF28F66}Imports/PNG/AI/aiGen05_mask.edds"
+ NMOMap "{96EF3CD8C8E643BA}Assets/_SharedData/Dirt/ST_Mud_01_NMO.edds"
+ DecalCategory Static
+ HeightMap "{F1AFD1E07C746B67}Assets/Decals/Asphalt/Damage/Data/Decal_Asphalt_Cracks_03_H.edds"
+ ParallaxMidlePlane 0
+}

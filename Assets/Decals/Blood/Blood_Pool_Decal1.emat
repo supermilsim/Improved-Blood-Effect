@@ -1,0 +1,9 @@
+MatPBRDecal : "{C0CC8B8062924797}Assets/Decals/Blood/Decal_Blood4.emat" {
+ Color 1 0 0 1
+ SpecularIBL 0.168 0.168 0.168 1
+ ZBias 1
+ SpecularMul 0.1
+ RoughnessScale 1.158
+ DielectricReflectance 0.02
+ DecalCategory Static
+}

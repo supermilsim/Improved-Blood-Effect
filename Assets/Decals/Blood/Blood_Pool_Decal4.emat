@@ -1,0 +1,12 @@
+MatPBRDecal : "{D73B982A32A04FA5}Assets/Decals/Blood/Decal_Blood5.emat" {
+ Color 0.05 0 0 1
+ SpecularIBL 0.168 0.168 0.168 1
+ ZBias 1
+ SpecularMul 0.1
+ RoughnessScale 2.544
+ DielectricReflectance 0.02
+ BCRMap "{760D5A0412977F09}Imports/PNG/AI/aiGen06.edds"
+ OpacityMap "{E55C7F783A1CE949}Imports/PNG/AI/aiGen06_mask.edds"
+ NMOMap "{96EF3CD8C8E643BA}Assets/_SharedData/Dirt/ST_Mud_01_NMO.edds"
+ DecalCategory Static
+}

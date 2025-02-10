@@ -1,0 +1,4 @@
+MatPBRDecal : "{C0CC8B8062924797}Assets/Decals/Blood/Decal_Blood4.emat" {
+ ZBias 1
+ DecalCategory Static
+}
