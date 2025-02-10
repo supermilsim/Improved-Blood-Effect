@@ -1,0 +1,14 @@
+Particle {
+ Color 0.344 0 0 1
+ AlbedoMap "{EE39249FB37527E3}Particles/_Textures/Dust_pillar_05_BCA.edds"
+ EmissiveAbsoluteLV 0
+ ReceiveShadow 1
+ ReceiveProbesLighting 1
+ ReceiveLights 1
+ AlphaMul 0.5
+ SphereSizeMultiplier 0.1
+ VertexNormalPower 0.4
+ NormalStretching 0.4
+ Backlight 0.3
+ Softness 2
+}

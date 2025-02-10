@@ -1,0 +1,9 @@
+Particle {
+ AlbedoMap "{EF3A8EBE4FDC6C20}Particles/_Textures/Blood_squirt_anim_05_BCA.edds"
+ ReceiveShadow 1
+ ReceiveProbesLighting 1
+ ReceiveLights 1
+ TileU 4
+ TileV 3
+ SphereSizeMultiplier 0
+}

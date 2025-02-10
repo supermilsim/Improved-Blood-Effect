@@ -1,0 +1,14 @@
+Particle {
+ Color 1 1 1 1
+ AlbedoMap "{16104BEEB304F46E}Particles/_Textures/Blood_squirt_01_BCA.edds"
+ NormalMap "{5A67EEB7E9758F16}Particles/_Textures/1x1_blank_N.edds"
+ Diffuse 1 0.343 0.343 1
+ Ambient 1 1 1 1
+ Emissive 0.01 0.01 0.01 0
+ ReceiveShadow 1
+ ReceiveProbesLighting 1
+ ReceiveLights 1
+ TileU 3
+ SphereSizeMultiplier 1
+ Softness 0.5
+}

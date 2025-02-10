@@ -1,0 +1,92 @@
+SCR_ChimeraCharacter : "{284E735C6C70DAD2}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_BaseLoadout.et" {
+ coords 97.561 1.417 117.523
+}
+Vehicle UAZ452_ambulance1 : "{43C4AF1EEBD001CE}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_ambulance.et" {
+ coords 105.872 4 117.374
+ m_eVehicleType VEHICLE
+}
+GenericEntity : "{5108922392AE7139}PrefabsEditable/Auto/Rocks/Granite/E_GraniteCliff_01.et" {
+ coords 24.506 1 38.047
+}
+$grp SCR_ChimeraCharacter : "{5B1996C05B1E51A4}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_AR.et" {
+ {
+  coords 93.911 1.428 116.896
+ }
+ {
+  coords 90.317 1.401 92.291
+ }
+ {
+  coords 107.346 2.318 92.518
+ }
+ {
+  coords 120.202 2.159 105.194
+ }
+}
+SCR_DestructibleBuildingEntity : "{60333F74EE12B52F}Prefabs/Structures/Houses/Village/House_Village_E_1I05/House_Village_E_1I05s.et" {
+ coords 99.794 0.675 89.487
+}
+$grp SCR_ChimeraCharacter : "{626874113CAE4387}Prefabs/Characters/Factions/CIV/Businessman/Character_CIV_Businessman_3.et" {
+ {
+  coords 95.072 1.927 118.267
+ }
+ {
+  coords 99.332 1 121.254
+ }
+ {
+  coords 102.587 1 118.266
+ }
+ {
+  coords 93.431 1.605 118.49
+ }
+ {
+  coords 99.807 1.842 116.942
+ }
+ {
+  coords 94.859 1.621 119.365
+ }
+ {
+  coords 98.622 1.138 118.08
+ }
+}
+$grp SCR_ChimeraCharacter : "{836E7E39AAC5888B}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Base.et" {
+ {
+  coords 100.59 5.098 119.47
+ }
+ {
+  coords 100.794 1.077 121.861
+ }
+}
+SCR_DestructibleBuildingEntity : "{8ACC8A8EB87A28FF}Prefabs/Structures/Houses/Village/House_Village_E_1I03/House_Village_E_1I03.et" {
+ coords 119.943 0.109 114.687
+ angleY -175.609
+}
+SCR_DestructibleBuildingEntity : "{987D2B924288F99D}PrefabsEditable/Auto/Structures/Ruins/HouseRuins/E_HouseRuin_01_Corner_Stairs.et" {
+ coords 76.316 0 113.498
+}
+$grp SCR_ChimeraCharacter : "{CD28EE7C5690D3BB}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Ammo.et" {
+ {
+  coords 94.383 1.431 117.569
+ }
+ {
+  coords 91.389 0.997 96.447
+ }
+ {
+  coords 115.897 1.39 114.956
+  angleY 59.177
+ }
+}
+$grp SCR_DestructibleEntity : "{E53E3E97C44AB493}Prefabs/Structures/Walls/Brick/BrickGate_01/BrickGate_01_4m_House_Village_E_1I03.et" {
+ {
+  coords 101.941 0 119.414
+ }
+ {
+  coords 101.573 1.408 119.269
+  angleY -93.002
+ }
+ {
+  coords 95.267 0.209 118.15
+  angleX -90
+  angleY 86.998
+  angleZ -180
+ }
+}

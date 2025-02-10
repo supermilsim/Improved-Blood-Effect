@@ -1,0 +1,7 @@
+DecalEntity : "{71979372AFE909E5}Prefabs/Decals/Blood/BloodStain_Large_01.et" {
+ ID "50E4C31FCE7FE3EB"
+ scale 1.5
+ FarPlane 1
+ Lifetime 150
+ Mat "{4BEEAF470FDD2AED}Assets/Decals/Blood/Blood_Pool_Decal1.emat"
+}

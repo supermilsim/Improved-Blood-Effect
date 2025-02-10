@@ -1,0 +1,17 @@
+Particle {
+ Color 0.14 0 0 1
+ AlbedoMap "{167588DBC6BE67F2}Particles/_Textures/Whisp_01_Anim_BCA.edds"
+ NormalMap "{6A743DB165BA5185}Particles/_Textures/Whisp_01_Anim_BCA_N.edds"
+ AlphaToEmissiveLV FromAlphaGraphs
+ ReceiveShadow 1
+ ReceiveProbesLighting 1
+ ReceiveLights 1
+ AlphaMul 1.4
+ TileU 8
+ TileV 8
+ NormalMapPower 1
+ NormalStretching 0
+ Backlight 1
+ BacklightStretching 0.5
+ Softness 0.5
+}

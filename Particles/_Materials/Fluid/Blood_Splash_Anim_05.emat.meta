@@ -1,0 +1,17 @@
+MetaFileClass {
+ Name "{BE12FF266346D9AB}Particles/_Materials/Fluid/Blood_Splash_Anim_05.emat"
+ Configurations {
+  EMATResourceClass PC {
+  }
+  EMATResourceClass XBOX_ONE : PC {
+  }
+  EMATResourceClass XBOX_SERIES : PC {
+  }
+  EMATResourceClass PS4 : PC {
+  }
+  EMATResourceClass PS5 : PC {
+  }
+  EMATResourceClass HEADLESS : PC {
+  }
+ }
+}

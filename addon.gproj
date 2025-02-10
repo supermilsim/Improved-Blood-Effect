@@ -1,0 +1,8 @@
+GameProject {
+ ID "ImprovedBloodEffect"
+ GUID "62FCEB51DF8527B6"
+ TITLE "Improved Blood Effect"
+ Dependencies {
+  "58D0FB3206B6F859"
+ }
+}
