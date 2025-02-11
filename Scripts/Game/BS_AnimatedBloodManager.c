@@ -4,581 +4,556 @@ class BS_AnimatedBloodManagerClass : GenericEntityClass
 
 class BS_AnimatedBloodManager : GenericEntity
 {
+    // Singleton Instance
+    protected static BS_AnimatedBloodManager instance;
 
-	static ref map<EDecalType, ref array<ResourceName>> materialsMap;
-	//ref map<int, ref DecalInformation> decalsSpawned;
-	ref map<ref EntityID, ref BloodTrailInfo> bloodTrailsInfoMap;
-	ref DecalInformation lastDecalSpawned;
-	int beforeNumber;
-	bool newDecalSpawned = false;
-	ref array<IEntity> bleedingCharacters;
-	private ref array<Decal> allDecals = {};
-	ref static array<DecalWrapper> currentPlayerDecals;
-	ref array<DecalWrapper> currentCharacterDecals;
+    // Material Map (Stores Decal Materials)
+    protected static ref map<EDecalType, ref array<ResourceName>> materialsMap;
 
+    // Blood Trail & Decal Management
+	protected ref map<int, float> decalSpawnTimes;
+    protected ref array<Decal> allDecals;
+    protected ref array<IEntity> deactiveTrails;
 
-	
-	ref map<string, string> settings;
-	
-	
-	int materialColor; // todo make this dynamic
-	
-	int defaultLifeTime = -1;
-	int defaultLifeTimeMilSec = 420000; //360000; // 6 min // 420000 // 7 min
-	float counter;
-	
-	const int maxDropled = 100;
-	int currentDropled;
-	
-	const int maxWallsplatter = 25;
-	int currentWallsplatter;
-	
-	
-	const int maxTrail = 250;
-	int currentTrail;
-	ref array<IEntity> deactiveTrails;
-	
-	const int maxPool = 20;
-	int currentPool;
-	
-	
-	bool iambleeding = false;
-	//int someoneStillBleeding = 0;
-	//IEntity character, vector hitPosition, float damage
-	
-	
-	static BS_AnimatedBloodManager instance;
-	
-	ref array<Material> materialsLoaded;
-	// ref array<Material> wallsplattersLoaded;
-	// ref array<Material> genericSplattersLoaded;
+    // Decal Tracking
+    protected int beforeNumber;
 
-	// would be better if it's all a static class? No we can't allocate stuff maybe? I dont remember
+    // Colors & Lifetime
+    protected int materialColor;
+    protected int defaultLifeTime = -1;
+    protected int defaultLifeTimeMilSec = 420000; // 7 minutes
+
+    // Blood Management Limits
+    protected const int maxDropled = 100;
+    protected int currentDropled;
+    protected const int maxWallsplatter = 25;
+    protected int currentWallsplatter;
+    protected const int maxTrail = 250;
+    protected int currentTrail;
+    protected const int maxPool = 20;
+    protected int currentPool;
+
+    // -------------------------------------------------------------------------------------------------
+    // Singleton Management
 	static BS_AnimatedBloodManager GetInstance()
 	{
+		if (!instance)
+		{
+			World gameWorld = GetGame().GetWorld();
+			if (!gameWorld)
+				return null;
+
+			instance = BS_AnimatedBloodManager.Cast(gameWorld.FindEntityByName("BS_AnimatedBloodManager"));
+
+			if (!instance)
+			{
+				instance = BS_AnimatedBloodManager.Cast(GetGame().SpawnEntity(BS_AnimatedBloodManager, gameWorld, null));
+				if (instance)
+					BS_AnimatedBloodManager.SetInstance(instance);
+			}
+		}
+
 		return instance;
 	}
 
+    static void SetInstance(BS_AnimatedBloodManager newInstance)
+    {
+        instance = newInstance;
+    }
+
+    // -------------------------------------------------------------------------------------------------
+    // Constructor
 	void BS_AnimatedBloodManager(IEntitySource src, IEntity parent)
 	{
+		if (!instance)
+			instance = this;
 
 		SetEventMask(EntityEvent.INIT | EntityEvent.FRAME);
 		SetFlags(EntityFlags.ACTIVE, true);
 
-		Math.Randomize(-1); // todo this is not really random.
+		if (!materialsMap)
+			materialsMap = new map<EDecalType, ref array<ResourceName>>();
 
-		
-		//decalsSpawned = new map<int, ref DecalInformation>();
-		materialsMap = new map<EDecalType, ref array<ResourceName>>();
-
-		materialsMap.Insert(EDecalType.BLOODPOOL, {"{4BEEAF470FDD2AED}Assets/Decals/Blood/Blood_Pool_Decal1.emat","{15068604B050A4E2}Assets/Decals/Blood/Blood_Pool_Decal2.emat","{E10EC19CBD8DCC96}Assets/Decals/Blood/Blood_Pool_Decal3.emat","{A8D6D483CF4BB8FC}Assets/Decals/Blood/Blood_Pool_Decal4.emat"});
-		materialsMap.Insert(EDecalType.DROPLETS ,{"{F73C6C3193BCA499}Assets/Decals/Blood/Blood_Droplet_Decal0.emat","{99715268A6DD4A11}Assets/Decals/Blood/Blood_Droplet_Decal1.emat","{A18DC91C12B108C5}Assets/Decals/Blood/Blood_Droplet_Decal2.emat"});
-		materialsMap.Insert(EDecalType.WALLSPLATTER, {"{BC4DA31342C146F4}Assets/Decals/Blood/Blood_Wallsplatters_Decal0.emat","{4845E48B4F1C2E80}Assets/Decals/Blood/Blood_Wallsplatters_Decal1.emat","{16ADCDC8F091A08F}Assets/Decals/Blood/Blood_Wallsplatters_Decal2.emat"});
-		materialsMap.Insert(EDecalType.BLOODTRAIL ,{"{F73C6C3193BCA499}Assets/Decals/Blood/Blood_Droplet_Decal0.emat","{99715268A6DD4A11}Assets/Decals/Blood/Blood_Droplet_Decal1.emat","{A18DC91C12B108C5}Assets/Decals/Blood/Blood_Droplet_Decal2.emat","{C41FD463B6732744}Assets/Decals/Blood/Blood_Droplet_Decal3.emat","{8DC7C17CC4B5532E}Assets/Decals/Blood/Blood_Droplet_Decal4.emat"});
-		
-		materialsLoaded = new array<Material>();
-
-		//Print("hi");
-		foreach (ResourceName rsBloodPool : materialsMap.Get(EDecalType.BLOODPOOL))
-			materialsLoaded.Insert(Material.GetOrLoadMaterial(rsBloodPool, 0));
-		foreach (ResourceName rsWallSplatter : materialsMap.Get(EDecalType.WALLSPLATTER))
-			materialsLoaded.Insert(Material.GetOrLoadMaterial(rsWallSplatter, 0));
-		foreach (ResourceName rsBloodTrail : materialsMap.Get(EDecalType.BLOODTRAIL))
-			materialsLoaded.Insert(Material.GetOrLoadMaterial(rsBloodTrail, 0));
-		foreach (ResourceName rsBloodDroplet : materialsMap.Get(EDecalType.DROPLETS))
-			materialsLoaded.Insert(Material.GetOrLoadMaterial(rsBloodDroplet, 0));
-		
-		instance = this;
-
-		if (!deactiveTrails)
-			deactiveTrails = new array<IEntity>();
-		
-		
-		instance = this;
+		allDecals = new array<Decal>();
+		deactiveTrails = new array<IEntity>();
+		decalSpawnTimes = new map<int, float>(); // Initialize spawn time tracking
 
 		materialColor = Color.FromRGBA(128, 0, 0, 255).PackToInt();
-
-		currentCharacterDecals = new array<DecalWrapper>();
-		bleedingCharacters = new array<IEntity>();
-
-		if (!currentPlayerDecals)
-			currentPlayerDecals = new array<DecalWrapper>();
-
-		// MCF_Debug.dbgShapes = new array<Shape>();
-
-		SetEventMask(EntityEvent.INIT | EntityEvent.FRAME);
+		LoadMaterialReferences();
 	}
+
+    // -------------------------------------------------------------------------------------------------
+    // Load Material References (.emat File Paths)
+    protected void LoadMaterialReferences()
+    {
+        materialsMap.Insert(EDecalType.BLOODPOOL, {
+            "{4BEEAF470FDD2AED}Assets/Decals/Blood/Blood_Pool_Decal1.emat",
+            "{15068604B050A4E2}Assets/Decals/Blood/Blood_Pool_Decal2.emat",
+            "{E10EC19CBD8DCC96}Assets/Decals/Blood/Blood_Pool_Decal3.emat",
+            "{A8D6D483CF4BB8FC}Assets/Decals/Blood/Blood_Pool_Decal4.emat"
+        });
+
+        materialsMap.Insert(EDecalType.DROPLETS, {
+            "{F73C6C3193BCA499}Assets/Decals/Blood/Blood_Droplet_Decal0.emat",
+            "{99715268A6DD4A11}Assets/Decals/Blood/Blood_Droplet_Decal1.emat",
+            "{A18DC91C12B108C5}Assets/Decals/Blood/Blood_Droplet_Decal2.emat"
+        });
+
+        materialsMap.Insert(EDecalType.WALLSPLATTER, {
+            "{BC4DA31342C146F4}Assets/Decals/Blood/Blood_Wallsplatters_Decal0.emat",
+            "{4845E48B4F1C2E80}Assets/Decals/Blood/Blood_Wallsplatters_Decal1.emat",
+            "{16ADCDC8F091A08F}Assets/Decals/Blood/Blood_Wallsplatters_Decal2.emat"
+        });
+
+        materialsMap.Insert(EDecalType.BLOODTRAIL, {
+            "{F73C6C3193BCA499}Assets/Decals/Blood/Blood_Droplet_Decal0.emat",
+            "{99715268A6DD4A11}Assets/Decals/Blood/Blood_Droplet_Decal1.emat",
+            "{A18DC91C12B108C5}Assets/Decals/Blood/Blood_Droplet_Decal2.emat",
+            "{C41FD463B6732744}Assets/Decals/Blood/Blood_Droplet_Decal3.emat",
+            "{8DC7C17CC4B5532E}Assets/Decals/Blood/Blood_Droplet_Decal4.emat"
+        });
+    }
 
 	override void EOnInit(IEntity owner) //! EntityEvent.INIT
 	{
 		if (System.IsConsoleApp())
 			return;
-		
+
 		super.EOnInit(owner);
-		
+
 		// Allocate it whenever called. When called, let's start.
 	}
 
-
 	void deathNote(IEntity character, bool erase)
 	{
-		
+		// Ensure deactiveTrails array is initialized
+		if (!deactiveTrails)
+			deactiveTrails = new array<IEntity>();
+
 		int deadperson = deactiveTrails.Find(character);
-		
+
 		if (deadperson > -1)
 		{
-			if (erase == true)
-			{
+			if (erase)
 				deactiveTrails.Remove(deadperson);
-			}
+
 			return;
 		}
-		else
-		{
-			deactiveTrails.Insert(character);
-			//Print("someone Dead");
-		}
-		
+
+		deactiveTrails.Insert(character);
 	}
-	
+
 	void deathNoteWipe()
 	{
-		int i;
-		if (deactiveTrails.Count() > 0)
+		while (deactiveTrails.Count() > 0)
 		{
-			for (i = 0; deactiveTrails.Count(); i++)
-			{
-				IEntity character = deactiveTrails.Get(0);
-				if (character)
-				{
-					
-					deactiveTrails.Remove(0);
-				}
-				else if (character == null){
-					deactiveTrails.Remove(0);
-				
-				}
-			}
+			IEntity character = deactiveTrails.Get(0);
+			deactiveTrails.Remove(0);
 		}
 	}
-	
+
 	void isBleedingX(IEntity character, float damage)
 	{
-		
-		
-		//Print(deactiveTrails.Find(character));
-		if (deactiveTrails.Find(character) > -1)
-		{
+		Print("BLEEDING");
+		// Ensure deactiveTrails array is initialized
+		if (!deactiveTrails)
+			deactiveTrails = new array<IEntity>();
+
+		// Early return if character is null
+		if (!character)
 			return;
-		}
-		
-		
-		if (character != null)
-		{
-			SpawnBloodTrail(character, damage);
-		}
-		
-		
-		
+
+		// Check if the character is already in deactiveTrails
+		if (deactiveTrails.Find(character) > -1)
+			return;
+
+		// Spawn blood trail if character is valid
+		Print("SPAWNING BLOODTRAIL");
+		SpawnBloodTrail(character, damage);
 	}
-	
-	bool coinflip() // a randomizer. funny name.
+
+	bool coinflip() // A randomizer with a funny name.
 	{
-		return Math.RandomInt(0,2);	
+		return Math.RandomInt(0, 2) == 1; // Ensures correct boolean return
 	}
-	
-	void failSafe() //prevents game crashes
+
+	void failSafe()
 	{
 		currentDropled = 0;
-		//currentWallsplatter = 0;
-		//currentTrail = 0;
-		//currentPool = 0;
+		currentWallsplatter = 0;
+		currentTrail = 0;
+		currentPool = 0;
+
 		deathNoteWipe();
-		//RemoveDecals();
-		//Print("failsafe calisti");
-		//Print(allDecals.Count());
-		
+
+		if (allDecals && !allDecals.IsEmpty())
+		{
+			RemoveDecals(); // Now only removes expired decals
+		}
 	}
-	
-	void DecalArrayWipe() //clears the decal array
+
+	void DecalArrayWipe()
 	{
-		//Print("decal wipe incoming"); 
 		GetGame().GetCallqueue().Remove(RemoveDecals);
 		World tmpWorld = GetGame().GetWorld();
-		
-		int i;
-		if (allDecals.Count() > 0)
+
+		if (!allDecals || allDecals.IsEmpty() || !decalSpawnTimes)
+			return;
+
+		float currentTime = GetGame().GetWorld().GetWorldTime();
+
+		for (int i = allDecals.Count() - 1; i >= 0; i--)
 		{
-			for (i = 0; allDecals.Count() - 1 ; i++)
+			float spawnTime;
+			if (!decalSpawnTimes.Find(i, spawnTime))
+				continue;
+
+			if ((currentTime - spawnTime) >= defaultLifeTimeMilSec / 1000) // Convert ms to seconds
 			{
-				
-				Decal decal = allDecals.Get(0);
+				Decal decal = allDecals.Get(i);
 				if (decal)
-				{
 					tmpWorld.RemoveDecal(decal);
-					allDecals.Remove(0);
-				}
-				else
-				{
-					allDecals.Remove(0);
-				
-				}
+
+				allDecals.Remove(i);
+				decalSpawnTimes.Remove(i);
 			}
 		}
-		
-		
-		
 	}
-	
-	void SpawnDecal(TraceParam traceParam, EDecalType type, vector origin, vector projection, float nearClip, float farClip, float angle, float size, float alphaTestValue = -1, float alphaMulValue = -1, int lifetime = defaultLifeTime)
+
+	void SpawnDecal(TraceParam traceParam, EDecalType type, vector origin, vector projection, float nearClip, float farClip, float angle, float size, float alphaTestValue = -1, float alphaMulValue = -1, int lifetime = -1)
 	{
-	
-		
-		if (traceParam.TraceEnt == null)
-		{
+		if (!traceParam || !traceParam.TraceEnt)
 			return;
-		}
-		
+
 		EntityFlags entityFlags = traceParam.TraceEnt.GetFlags();
-		//Print(traceParam.TraceEnt.Type());
-		
-		
-		if (entityFlags & EntityFlags.STATIC || traceParam.TraceEnt.Type() == RoadEntity || traceParam.TraceEnt.Type() == GenericTerrainEntity)
+		if (!(entityFlags & EntityFlags.STATIC) && traceParam.TraceEnt.Type() != RoadEntity && traceParam.TraceEnt.Type() != GenericTerrainEntity)
+			return;
+
+		if (!materialsMap)
+			return;
+
+		array<ResourceName> refResources = materialsMap.Get(type);
+		if (!refResources || refResources.IsEmpty())
+			return;
+
+		if (lifetime == -1)
+			lifetime = defaultLifeTimeMilSec / 1000; // Convert ms to seconds
+
+		int randomMaterialIndex = Math.RandomIntInclusive(0, refResources.Count() - 1);
+		if (refResources.Count() > 1)
 		{
-			// check defaultLifeTime.
-			lifetime = defaultLifeTime;
-			array<ResourceName> refResources = materialsMap.Get(type);
-			int randomMaterialIndex = Math.RandomIntInclusive(0, refResources.Count() - 1);
-			if (randomMaterialIndex == beforeNumber)
+			int attemptLimit = 5;
+			int attempt = 0;
+			while (randomMaterialIndex == beforeNumber && attempt < attemptLimit)
 			{
 				randomMaterialIndex = Math.RandomIntInclusive(0, refResources.Count() - 1);
-				
+				attempt++;
 			}
-			beforeNumber = randomMaterialIndex;
-			ResourceName materialResource = refResources[randomMaterialIndex];
-			Material material = Material.GetMaterial(materialResource);
-			
-			
-			Decal decal;
-	
-			if (traceParam.TraceEnt)
+		}
+
+		beforeNumber = randomMaterialIndex;
+		ResourceName materialResource = refResources[randomMaterialIndex];
+
+		World tmpWorld = GetGame().GetWorld();
+		if (!tmpWorld)
+			return;
+
+		Decal decal = tmpWorld.CreateDecal(traceParam.TraceEnt, origin, projection, nearClip, farClip, angle, size, 1, materialResource, lifetime, materialColor);
+		if (!decal)
+			return;
+
+		allDecals.Insert(decal);
+
+		// Store the timestamp of when the decal was created
+		int decalIndex = allDecals.Find(decal);
+		if (decalIndex != -1)
+		{
+			decalSpawnTimes.Set(decalIndex, GetGame().GetWorld().GetWorldTime());
+			GetGame().GetCallqueue().CallLater(RemoveDecals, lifetime * 1000, false, decalIndex);
+		}
+	}
+
+	void RemoveDecals(int decalID = -1)
+	{
+		if (!allDecals || allDecals.IsEmpty() || !decalSpawnTimes)
+			return;
+
+		World tmpWorld = GetGame().GetWorld();
+		if (!tmpWorld)
+			return;
+
+		float currentTime = GetGame().GetWorld().GetWorldTime();
+
+		// If decalID is -1, remove only expired decals
+		if (decalID == -1)
+		{
+			for (int i = allDecals.Count() - 1; i >= 0; i--)
 			{
-				
-				World tmpWorld = GetGame().GetWorld();
-				decal = tmpWorld.CreateDecal(traceParam.TraceEnt, origin, projection, nearClip, farClip, angle, size, 1, materialResource, lifetime, materialColor);
-				
-				if (!decal)
-					return;
-				
-				allDecals.Insert(decal);
-				GetGame().GetCallqueue().CallLater(RemoveDecals, defaultLifeTimeMilSec, false, allDecals.Find(decal)); // resets itself every 10 seconds
-				DecalBaseInfo decalBaseInfo = new DecalBaseInfo(decal, type, 0, size, angle, 1);
-				DecalPositionInfo decalPositionInfo = new DecalPositionInfo(traceParam, origin, projection);
-				MaterialInfo materialInfo = new MaterialInfo(alphaMulValue, alphaTestValue); // todo need to see the og values.... set them over here, this is wrong for now
-	
-				//if (alphaTestValue > 0)
-				//	material.SetParam("AlphaTest", alphaTestValue);
-				//if (alphaMulValue > 0)
-				//	material.SetParam("AlphaMul", alphaMulValue);
-	
-				materialInfo.SetIndexAlphaMap(randomMaterialIndex);
-				DecalInformation decalInformation = new DecalInformation(decalBaseInfo, decalPositionInfo, materialInfo);
-	
-				
+				float spawnTime;
+				if (!decalSpawnTimes.Find(i, spawnTime))
+					continue;
+
+				if ((currentTime - spawnTime) >= defaultLifeTimeMilSec / 1000) // Convert ms to seconds
+				{
+					Decal decal = allDecals.Get(i);
+					if (decal)
+						tmpWorld.RemoveDecal(decal);
+
+					allDecals.Remove(i);
+					decalSpawnTimes.Remove(i);
+				}
 			}
-		}else{
 			return;
 		}
-	}
-	
-	
-	void RemoveDecals(int decalID = 0)
-	{
-		if (decalID < 0)
-			return;	
-		
-		World tmpWorld = GetGame().GetWorld();
-		Decal decal = allDecals.Get(decalID);
-		
-			
-		if (decal)
+
+		// Ensure decalID is within bounds and check its lifetime
+		if (decalID < 0 || decalID >= allDecals.Count())
+			return;
+
+		float spawnTime;
+		if (!decalSpawnTimes.Find(decalID, spawnTime))
+			return;
+
+		if ((currentTime - spawnTime) >= defaultLifeTimeMilSec / 1000) // Convert ms to seconds
 		{
-			tmpWorld.RemoveDecal(decal);
-			//allDecals.Remove(decalID);
-			allDecals.Set(decalID,null)
+			Decal decal = allDecals.Get(decalID);
+			if (decal)
+				tmpWorld.RemoveDecal(decal);
+
+			allDecals.Set(decalID, null);
+			decalSpawnTimes.Remove(decalID);
 		}
 	}
-	
-	
+
 	void SpawnBloodTrail(IEntity character, float damage)
 	{
-		//Print("trail");
-		
-		if (character == null)
-		{
-			// sonra bakicam.
+		// Ensure character is valid
+		if (!character)
 			return;
-		}
-		
+
 		SCR_ChimeraCharacter player = SCR_ChimeraCharacter.Cast(character);
-		  
-		if (player.IsInVehicle())
+
+		// Ensure character is not in a vehicle
+		if (player && player.IsInVehicle())
 			return;
-	
-		//if (currentTrail > maxTrail)
-		//	return;
-		
-		
-		
+
+		// Get character components
 		SCR_CharacterDamageManagerComponent charDamageManagerComponent = SCR_CharacterDamageManagerComponent.Cast(character.FindComponent(SCR_CharacterDamageManagerComponent));
 		SCR_CharacterControllerComponent charControllerComponent = SCR_CharacterControllerComponent.Cast(character.FindComponent(SCR_CharacterControllerComponent));
-		if (!charDamageManagerComponent)
+
+		// Ensure valid components
+		if (!charDamageManagerComponent || !charControllerComponent)
 			return;
-		
+
+		// Get movement speed
 		float speed = charControllerComponent.GetVelocity().Length();
-		
 		bool shouldBleed = charDamageManagerComponent.IsBleeding() && (speed > 0.1);
-		
-		
-		if (charDamageManagerComponent.IsBleeding())
-		{
-			
-			GetGame().GetCallqueue().CallLater(isBleedingX, 350, false, character, damage);
-		}
-		
-		
-		
+
+		// Schedule another blood check
+		GetGame().GetCallqueue().CallLater(isBleedingX, 350, false, character, damage);
+
+		// Exit if not bleeding
 		if (!shouldBleed)
 			return;
-			
+
+		// Constants and variables
 		const float distance = 2.0;
 		const float nearClip = 0;
 		const float farClip = 2.0;
-		float angle;
-		float size;
-		float min,max;
-		min = -0.22;
-		max = 0.22;
-		float x,z;
-		
-		
-		vector origin;
-		vector projection;
+		const float min = -0.22;
+		const float max = 0.22;
+
+		float x = Math.RandomFloatInclusive(min, max);
+		float z = Math.RandomFloatInclusive(min, max);
+		float size = Math.RandomFloatInclusive(0.3, 0.55);
+		float angle = Math.RandomFloatInclusive(-360, 360);
+
+		// Set origin and trace intersection
+		vector origin = character.GetOrigin() + Vector(0, distance / 4, 0);
 		vector intersectionPosition;
-		x = Math.RandomFloatInclusive(min, max);
-		z = Math.RandomFloatInclusive(min, max);
-		
-		origin = character.GetOrigin() + Vector(0, distance / 4, 0);
 		TraceParam traceParam = GetSurfaceIntersection(character, GetGame().GetWorld(), origin, Vector(0, -1, 0), distance, TraceFlags.WORLD | TraceFlags.ENTS, intersectionPosition);
-		origin = origin + Vector(x,0,z);
-		projection = -traceParam.TraceNorm;
-		size = Math.RandomFloatInclusive(0.3, 0.55);
-		angle = Math.RandomFloatInclusive(-360, 360);
-		
-		//currentTrail += 1;
+
+		// Ensure traceParam is valid
+		if (!traceParam)
+			return;
+
+		// Offset the origin slightly
+		origin = origin + Vector(x, 0, z);
+		vector projection = -traceParam.TraceNorm;
+
+		// Spawn blood decal
 		SpawnDecal(traceParam, EDecalType.BLOODTRAIL, origin, projection, nearClip, farClip, angle, size, -1, -1);
-		
-		
-		
 	}
-	
+
 	void SpawnDroplets(IEntity character, vector hitPosition)
 	{
-		//Print("droplet");
-		if (character == null)
-		{
+		// Ensure character is valid
+		if (!character)
 			return;
-		}
-		
+
+		// Ensure deactiveTrails array is initialized
+		if (!deactiveTrails)
+			deactiveTrails = new array<IEntity>();
+
+		// Prevent spawning for deactivated trails
 		if (deactiveTrails.Find(character) > -1)
-		{
 			return;
-		}
-		
+
 		SCR_ChimeraCharacter player = SCR_ChimeraCharacter.Cast(character);
-		  
-		if (player.IsInVehicle())
+
+		// Ensure player is valid and not in a vehicle
+		if (player && player.IsInVehicle())
 			return;
-		
+
+		// Manage droplet count
 		currentDropled += 2;
 		if (currentDropled > maxDropled)
 			return;
-		
+
+		// Constants
 		const float distance = 2.0;
 		const float nearClip = 0;
 		const float farClip = 2.0;
-		float angle;
-		float size;
+		const float min = -0.95;
+		const float max = 0.95;
 
-		vector intersectionPosition;
-		vector origin;
-		vector projection;
-		float min,max;
-		min = -0.95;
-		max = 0.95;
-		float x,z;
-		
-		int i;
+		// Variables
+		float x, z, size, angle;
+		vector intersectionPosition, origin, projection;
 
-		for (i = 0; i < 2; i++) 
+		// Spawn multiple droplets
+		for (int i = 0; i < 2; i++)
 		{
-			//y = Math.RandomFloatInclusive(min, max);
 			x = Math.RandomFloatInclusive(min, max);
 			z = Math.RandomFloatInclusive(min, max);
+
+			// Set origin and trace intersection
 			origin = character.GetOrigin() + Vector(0, distance / 4, 0);
 			TraceParam traceParam = GetSurfaceIntersection(character, GetGame().GetWorld(), origin, Vector(0, -1, 0), distance, TraceFlags.WORLD | TraceFlags.ENTS, intersectionPosition);
-			
+
+			// Ensure traceParam is valid
+			if (!traceParam)
+				continue;
+
 			projection = -traceParam.TraceNorm;
-			
-			
-			// projection should be a bit randomized
-	
+
+			// Randomize size and angle
 			size = Math.RandomFloatInclusive(0.35, 0.6);
 			angle = Math.RandomFloatInclusive(-360, 360);
-			
-			
-			
-			
+
+			// Randomly offset origin using coinflip()
+			vector offset = Vector(x, 0, z);
 			if (coinflip())
-			{
-				origin = origin + Vector(x,0,z);
-			} else {
-				origin = origin - Vector(x,0,z);
-			}
-			
+				origin = origin + offset;
+			else
+				origin = origin - offset;
+
+			// Spawn blood droplet decal
 			SpawnDecal(traceParam, EDecalType.DROPLETS, origin, projection, nearClip, farClip, angle, size, -1, -1);
 		}
-		
-		
-		
-		
-
 	}
 
 	void SpawnWallSplatter(IEntity character, vector hitPosition, vector hitDirection)
 	{
-		//Print("wall");
-		if (character == null)
-		{
+		// Ensure character is valid
+		if (!character)
 			return;
-		}
-		
+
+		// Ensure deactiveTrails array is initialized
+		if (!deactiveTrails)
+			deactiveTrails = new array<IEntity>();
+
+		// Prevent spawning for deactivated trails
 		if (deactiveTrails.Find(character) > -1)
-		{
 			return;
-		}
-		
+
 		SCR_ChimeraCharacter player = SCR_ChimeraCharacter.Cast(character);
-		if (player.IsInVehicle())
-		{
+
+		// Ensure player is valid and not in a vehicle
+		if (player && player.IsInVehicle())
 			return;
-		}
-		
-		//currentWallsplatter += 1;
-		//if (currentWallsplatter > maxWallsplatter)
-		//	return;
-		
-		
-		array<string> refResources;
+
+		// Constants
 		const float distance = 2.0;
 		const float nearClip = 0;
 		const float farClip = 2.0;
-		const float angle;
-		float size;
 		const float alphaMulValue = 1.3;
-		const float alphaTestValue = 0; 
-		
+		const float alphaTestValue = 0;
 
-		TraceParam traceParam;
-		vector origin;
-		vector projection;
-		vector intersectionPosition;
-		vector correctedDirection;
+		// Variables
+		float size, angle;
+		vector origin, projection, intersectionPosition;
 
 		// Check intersection and setup vectors
-		traceParam = GetSurfaceIntersection(character, GetGame().GetWorld(), hitPosition, hitDirection, distance, TraceFlags.ENTS, intersectionPosition);
-		origin = intersectionPosition - hitDirection * (2.0 / 4);
+		TraceParam traceParam = GetSurfaceIntersection(character, GetGame().GetWorld(), hitPosition, hitDirection, distance, TraceFlags.ENTS, intersectionPosition);
 
-		float xProjection;
-		float yProjection;
-		float zProjection;
+		// Ensure traceParam is valid
+		if (!traceParam || !traceParam.TraceEnt)
+			return;
+
+		// Adjust origin
+		origin = intersectionPosition - (hitDirection * (distance / 4));
+
+		// Calculate projection vector (NO ternary operators)
+		float xProjection, zProjection;
 		if (hitDirection[0] < 0)
 			xProjection = -0.1;
 		else
 			xProjection = 0.1;
 
-		yProjection = 0.02;
+		float yProjection = 0.02;
 
 		if (hitDirection[2] < 0)
 			zProjection = -0.5;
 		else
 			zProjection = 0.5;
 
-		projection = {xProjection, yProjection, zProjection};
+		projection = Vector(xProjection, yProjection, zProjection);
 
-		if (traceParam.TraceEnt)
-		{
-			// angle = Math.RandomFloatInclusive(-360, 360);
-			size = Math.RandomFloatInclusive(0.8, 1.2);
-			
-			SpawnDecal(traceParam, EDecalType.WALLSPLATTER, origin, projection, nearClip, farClip, angle, size, alphaTestValue, alphaMulValue);
-		}
+		// Randomize angle and size
+		angle = Math.RandomFloatInclusive(-360, 360);
+		size = Math.RandomFloatInclusive(0.8, 1.2);
+
+		// Spawn the wall splatter decal
+		SpawnDecal(traceParam, EDecalType.WALLSPLATTER, origin, projection, nearClip, farClip, angle, size, alphaTestValue, alphaMulValue);
 	}
 
 	void SpawnGroundBloodpool(IEntity character, vector hitPosition, vector hitDirection, int nodeId)
 	{
-		
-		//Print("pool");
-		
-		
-		
-		//Print(character);
-		if (character == null)
-		{
+		// Ensure character is valid
+		if (!character)
 			return;
-		}
-		
-		SCR_ChimeraCharacter player = SCR_ChimeraCharacter.Cast(character);
-		if (player.IsInVehicle())
-		{
-			return;
-		}
-			
-	
-		
-		//if (currentPool > maxPool)
-		//	return;
-		
-		array<string> refResources;
-		Material material;
 
+		SCR_ChimeraCharacter player = SCR_ChimeraCharacter.Cast(character);
+
+		// Ensure player is valid and not in a vehicle
+		if (player && player.IsInVehicle())
+			return;
+
+		// Constants
 		const float distance = 2.0;
 		const float nearClip = 0;
 		const float farClip = 2.0;
-		const float angle;
-		float size;
 		const float alphaMulValue = 1.2;
 		const float alphaTestValue = 0;
 
-		TraceParam traceParam;
-		vector origin;
-		vector projection;
-		vector intersectionPosition;
-		vector correctedDirection;
-
+		// Variables
+		float size = 1.5;
+		float angle;
+		vector origin, projection, intersectionPosition;
 		vector characterBoneMatrix[4];
 		vector correctedHitPosition;
 
-	
-		size = 1.5;
+		// Check intersection with the surface
+		TraceParam traceParam = GetSurfaceIntersection(character, GetGame().GetWorld(), hitPosition, Vector(0, -1, 0), distance, TraceFlags.WORLD | TraceFlags.ENTS, intersectionPosition);
 
-		
-		traceParam = GetSurfaceIntersection(character, GetGame().GetWorld(), hitPosition, Vector(0, -1, 0), distance, TraceFlags.WORLD | TraceFlags.ENTS, intersectionPosition);
+		// Ensure traceParam is valid
+		if (!traceParam)
+			return;
 
-
-		if (character.GetAnimation().GetBoneMatrix(nodeId,characterBoneMatrix))
+		// Check if the character has a valid animation bone matrix
+		if (character.GetAnimation() && character.GetAnimation().GetBoneMatrix(nodeId, characterBoneMatrix))
 		{
-
 			correctedHitPosition = character.CoordToParent(characterBoneMatrix[3]);
 
 			// Correct origin and projection
@@ -590,119 +565,211 @@ class BS_AnimatedBloodManager : GenericEntity
 			origin = character.GetOrigin() + Vector(0, distance / 4, 0);
 			projection = vector.Lerp(-traceParam.TraceNorm, hitDirection, 0.5);
 		}
-		//currentPool += 1;
+
+		// Randomize angle
+		angle = Math.RandomFloatInclusive(-360, 360);
+
+		// Spawn the blood pool decal
 		SpawnDecal(traceParam, EDecalType.BLOODPOOL, origin, projection, nearClip, farClip, angle, size, alphaTestValue, alphaMulValue);
 	}
-
-
-	
 
 	// Helpers
 	static TraceParam GetSurfaceIntersection(IEntity owner, World m_world, vector origin, vector direction, float distance, int flags, out vector intersectionPosition)
 	{
-		auto param = new TraceParam();
+		// Ensure world is valid
+		if (!m_world)
+			return null;
+
+		// Ensure direction is valid
+		if (direction.Length() == 0)
+			return null;
+
+		// Create TraceParam object
+		TraceParam param = new TraceParam();
+		if (!param)
+			return null;
+
 		param.Start = origin;
-		param.End = origin + direction * distance;
+		param.End = origin + (direction * distance);
 		param.Flags = flags;
-		param.Exclude = owner;
+
+		// Exclude owner if valid
+		if (owner)
+			param.Exclude = owner;
+
+		// Perform trace and calculate intersection distance
 		float intersectionDistance = m_world.TraceMove(param, NULL) * distance;
 		intersectionPosition = origin + (direction * intersectionDistance);
+
 		return param;
 	}
-
 }
 
 class DecalInformation
 {
+    protected ref DecalBaseInfo decalBaseInfo;
+    protected ref DecalPositionInfo decalPositionInfo;
+    protected ref MaterialInfo materialInfo;
 
-	ref DecalBaseInfo decalBaseInfo;
-	ref DecalPositionInfo decalPositionInfo;
-	ref MaterialInfo materialInfo;
+    void DecalInformation(DecalBaseInfo baseInfo, DecalPositionInfo positionInfo, MaterialInfo matInfo)
+    {
+        if (!baseInfo || !positionInfo || !matInfo)
+            return;
 
-	void DecalInformation(DecalBaseInfo baseInfo, DecalPositionInfo positionInfo, MaterialInfo matInfo)
-	{
-		this.decalBaseInfo = baseInfo;
-		this.decalPositionInfo = positionInfo;
-		this.materialInfo = matInfo;
-	}
+        decalBaseInfo = baseInfo;
+        decalPositionInfo = positionInfo;
+        materialInfo = matInfo;
+    }
 
+    // Getters for encapsulation
+    DecalBaseInfo GetDecalBaseInfo()
+    {
+        return decalBaseInfo;
+    }
+
+    DecalPositionInfo GetDecalPositionInfo()
+    {
+        return decalPositionInfo;
+    }
+
+    MaterialInfo GetMaterialInfo()
+    {
+        return materialInfo;
+    }
 }
 
 class DecalBaseInfo
 {
-	Decal decal;
-	EDecalType type;
+    protected Decal decal;
+    protected EDecalType type;
 
-	int currentFrame;
-	float size;
-	float rotation;
-	float currentAlphaMul;
+    protected int currentFrame;
+    protected float size;
+    protected float rotation;
+    protected float currentAlphaMul;
+    protected bool isTerrainOnly;
 
-private bool isTerrainOnly;
+    void DecalBaseInfo(Decal p_decal, EDecalType p_type, int p_currentFrame, float p_size, float p_rotation, float p_currentAlphaMul)
+    {
+        // Validate decal object before assignment
+        if (!p_decal)
+            return;
 
-	void DecalBaseInfo(Decal p_decal, EDecalType p_type, int p_currentFrame, float p_size, int p_rotation, int p_currentAlphaMul)
-	{
-		this.decal = p_decal;
-		this.type = p_type;
-		this.currentFrame = p_currentFrame;
-		this.size = p_size;
-		this.rotation = p_rotation;
-		this.currentAlphaMul = p_currentAlphaMul;
-	}
+        decal = p_decal;
+        type = p_type;
+        currentFrame = p_currentFrame;
+        size = p_size;
+        rotation = p_rotation;
+        currentAlphaMul = p_currentAlphaMul;
+    }
 
-	void SetIsTerrainOnly(bool val)
-	{
-		this.isTerrainOnly = val;
-	}
+    // Getter methods for encapsulation
+    Decal GetDecal()
+    {
+        return decal;
+    }
 
-	bool GetIsTerrainOnly()
-	{
-		return isTerrainOnly;
-	}
+    EDecalType GetType()
+    {
+        return type;
+    }
 
+    int GetCurrentFrame()
+    {
+        return currentFrame;
+    }
+
+    float GetSize()
+    {
+        return size;
+    }
+
+    float GetRotation()
+    {
+        return rotation;
+    }
+
+    float GetCurrentAlphaMul()
+    {
+        return currentAlphaMul;
+    }
+
+    void SetIsTerrainOnly(bool val)
+    {
+        isTerrainOnly = val;
+    }
+
+    bool GetIsTerrainOnly()
+    {
+        return isTerrainOnly;
+    }
 }
 
 class DecalPositionInfo
 {
-	ref TraceParam traceParam;
-	vector hitPosition;
-	vector hitDirection;
-	vector originPosition;
-	vector projectionDirection;
+    protected ref TraceParam traceParam;
+    protected vector originPosition;
+    protected vector projectionDirection;
 
-	void DecalPositionInfo(TraceParam tf, vector originPos, vector projDir)
-	{
-		this.traceParam = tf;
+    void DecalPositionInfo(TraceParam tf, vector originPos, vector projDir)
+    {
+        // Ensure traceParam is valid
+        if (!tf)
+            return;
 
-		this.originPosition = originPos;
-		this.projectionDirection = projDir;
-	}
+        traceParam = tf;
+        originPosition = originPos;
+        projectionDirection = projDir;
+    }
 
+    // Getters for encapsulation
+    TraceParam GetTraceParam()
+    {
+        return traceParam;
+    }
+
+    vector GetOriginPosition()
+    {
+        return originPosition;
+    }
+
+    vector GetProjectionDirection()
+    {
+        return projectionDirection;
+    }
 }
 
 class MaterialInfo
 {
-	float alphaMul;
-	float alphaTest;
+    protected float alphaMul;
+    protected float alphaTest;
+    protected int indexAlpha; // Used only with alpha blended maps, not normal animated decals
 
-	int indexAlpha; // to be used only with alpha blended maps not normal animated decals
+    void MaterialInfo(float am = 1.0, float at = 1.0) // Default values for safety
+    {
+        alphaMul = am;
+        alphaTest = at;
+    }
 
-	void MaterialInfo(float am, float at)
-	{
-		alphaMul = am;
-		alphaTest = at;
-	}
+    void SetIndexAlphaMap(int id)
+    {
+        indexAlpha = id;
+    }
 
-	void SetIndexAlphaMap(int id)
-	{
-		this.indexAlpha = id;
-	}
+    int GetIndexAlphaMap()
+    {
+        return indexAlpha;
+    }
 
-	int GetIndexAlphaMap()
-	{
-		return indexAlpha;
-	}
+    float GetAlphaMul()
+    {
+        return alphaMul;
+    }
 
+    float GetAlphaTest()
+    {
+        return alphaTest;
+    }
 }
 
 enum EDecalType {
