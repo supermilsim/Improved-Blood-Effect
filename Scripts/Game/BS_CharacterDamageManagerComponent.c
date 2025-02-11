@@ -24,24 +24,24 @@ modded class SCR_CharacterDamageManagerComponent : ScriptedDamageManagerComponen
 	{
 		super.OnInit(owner);
 
-		// ✅ Ensure the owner entity is valid
+		// Ensure the owner entity is valid
 		if (!owner)
 			return;
 
 		currentCharacter = owner;
 
-		// ✅ Ensure the world is valid before assigning
+		// Ensure the world is valid before assigning
 		world = owner.GetWorld();
 		if (!world)
 			return;
 
-		// ✅ Get or create a global instance of BS_AnimatedBloodManager
+		// Get or create a global instance of BS_AnimatedBloodManager
 		animatedBloodManager = BS_AnimatedBloodManager.GetInstance();
 		if (!animatedBloodManager)
 		{
 			animatedBloodManager = BS_AnimatedBloodManager.Cast(GetGame().SpawnEntity(BS_AnimatedBloodManager, world, null));
 
-			// ✅ Assign instance globally to prevent multiple spawns
+			// Assign instance globally to prevent multiple spawns
 			if (animatedBloodManager)
 				BS_AnimatedBloodManager.SetInstance(animatedBloodManager);
 		}
@@ -51,7 +51,7 @@ modded class SCR_CharacterDamageManagerComponent : ScriptedDamageManagerComponen
 	{
 		super.OnLifeStateChanged(previousLifeState, newLifeState);
 
-		// ✅ Ensure animatedBloodManager is valid
+		// Ensure animatedBloodManager is valid
 		if (!animatedBloodManager)
 		{
 			animatedBloodManager = BS_AnimatedBloodManager.GetInstance();
@@ -59,7 +59,7 @@ modded class SCR_CharacterDamageManagerComponent : ScriptedDamageManagerComponen
 				return; // Exit if still null
 		}
 
-		// ✅ Ensure currentCharacter is valid before proceeding
+		// Ensure currentCharacter is valid before proceeding
 		if (!currentCharacter)
 			return;
 
@@ -79,16 +79,16 @@ modded class SCR_CharacterDamageManagerComponent : ScriptedDamageManagerComponen
 	{
 		super.OnDamage(damageContext);
 
-		// ✅ Ensure currentCharacter is valid
+		// Ensure currentCharacter is valid
 		if (!currentCharacter)
 			return;
 
-		// ✅ Get character damage manager component
+		// Get character damage manager component
 		SCR_CharacterDamageManagerComponent damageMgr = SCR_CharacterDamageManagerComponent.Cast(currentCharacter.FindComponent(SCR_CharacterDamageManagerComponent));
 		if (!damageMgr)
 			return;
 
-		// ✅ Ensure animatedBloodManager is valid
+		// Ensure animatedBloodManager is valid
 		if (!animatedBloodManager)
 		{
 			animatedBloodManager = BS_AnimatedBloodManager.GetInstance();
@@ -96,7 +96,7 @@ modded class SCR_CharacterDamageManagerComponent : ScriptedDamageManagerComponen
 				return; // Exit if still null
 		}
 
-		// ✅ Ensure pHitZone is valid before using it
+		// Ensure pHitZone is valid before using it
 		HitZone pHitZone = damageContext.struckHitZone;
 		if (!pHitZone)
 			return;
@@ -113,7 +113,7 @@ modded class SCR_CharacterDamageManagerComponent : ScriptedDamageManagerComponen
 		int colliderDescriptorIndex = pHitZone.GetColliderDescriptorIndex(colliderID);
 		pHitZone.TryGetColliderDescription(currentCharacter, colliderDescriptorIndex, null, null, correctNodeId);
 
-		// ✅ Ensure hitTransform contains valid data before proceeding
+		// Ensure hitTransform contains valid data before proceeding
 		if (hitTransform[0].Length() != 0)
 		{
 			// Save hit information
@@ -131,7 +131,7 @@ modded class SCR_CharacterDamageManagerComponent : ScriptedDamageManagerComponen
 			}
 		}
 
-		// ✅ Ensure character is bleeding before calling isBleedingX()
+		// Ensure character is bleeding before calling isBleedingX()
 		if (damageMgr.IsBleeding())
 		{
 			GetGame().GetCallqueue().CallLater(animatedBloodManager.isBleedingX, 500, false, currentCharacter, damage);
