@@ -10,7 +10,7 @@ modded class SCR_BaseGameMode : BaseGameMode
         {
             animatedBloodManager = BS_AnimatedBloodManager.Cast(GetGame().SpawnEntity(BS_AnimatedBloodManager, GetGame().GetWorld(), null));
 
-            // ✅ Use SetInstance() instead of direct access
+            // Use SetInstance() instead of direct access
             if (animatedBloodManager)
                 BS_AnimatedBloodManager.SetInstance(animatedBloodManager);
         }
@@ -18,8 +18,8 @@ modded class SCR_BaseGameMode : BaseGameMode
         // Ensure animatedBloodManager is valid before scheduling functions
         if (animatedBloodManager)
         {
-            GetGame().GetCallqueue().CallLater(animatedBloodManager.failSafe, 30000, true); // Runs every 30 seconds
-            GetGame().GetCallqueue().CallLater(animatedBloodManager.DecalArrayWipe, 960000, true); // Runs every 16 minutes
+            GetGame().GetCallqueue().CallLater(animatedBloodManager.failSafe, 30000, true); // Runs every 30 seconds 30000 ms
+            GetGame().GetCallqueue().CallLater(animatedBloodManager.DecalArrayWipe, 960000, true); // Runs every 16 minutes 960000 ms
         }
     }
 };

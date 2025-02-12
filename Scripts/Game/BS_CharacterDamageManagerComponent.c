@@ -134,7 +134,7 @@ modded class SCR_CharacterDamageManagerComponent : ScriptedDamageManagerComponen
 		// Ensure character is bleeding before calling isBleedingX()
 		if (damageMgr.IsBleeding())
 		{
-			GetGame().GetCallqueue().CallLater(animatedBloodManager.isBleedingX, 500, false, currentCharacter, damage);
+			GetGame().GetCallqueue().CallLater(animatedBloodManager.isBleedingX, 500, false, currentCharacter);
 		}
 	}
 

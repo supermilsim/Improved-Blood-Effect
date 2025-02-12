@@ -11,7 +11,6 @@ class BS_AnimatedBloodManager : GenericEntity
     protected static ref map<EDecalType, ref array<ResourceName>> materialsMap;
 
     // Blood Trail & Decal Management
-	protected ref map<int, float> decalSpawnTimes;
     protected ref array<Decal> allDecals;
     protected ref array<IEntity> deactiveTrails;
 
@@ -21,7 +20,7 @@ class BS_AnimatedBloodManager : GenericEntity
     // Colors & Lifetime
     protected int materialColor;
     protected int defaultLifeTime = -1;
-    protected int defaultLifeTimeMilSec = 420000; // 7 minutes
+    protected int defaultLifeTimeMilSec = 420000; // 7 minutes 420000 ms
 
     // Blood Management Limits
     protected const int maxDropled = 100;
@@ -76,7 +75,6 @@ class BS_AnimatedBloodManager : GenericEntity
 
 		allDecals = new array<Decal>();
 		deactiveTrails = new array<IEntity>();
-		decalSpawnTimes = new map<int, float>(); // Initialize spawn time tracking
 
 		materialColor = Color.FromRGBA(128, 0, 0, 255).PackToInt();
 		LoadMaterialReferences();
@@ -145,16 +143,12 @@ class BS_AnimatedBloodManager : GenericEntity
 
 	void deathNoteWipe()
 	{
-		while (deactiveTrails.Count() > 0)
-		{
-			IEntity character = deactiveTrails.Get(0);
-			deactiveTrails.Remove(0);
-		}
+		deactiveTrails.Clear();
 	}
 
-	void isBleedingX(IEntity character, float damage)
+	void isBleedingX(IEntity character)
 	{
-		Print("BLEEDING");
+		//Print("BLEEDING");
 		// Ensure deactiveTrails array is initialized
 		if (!deactiveTrails)
 			deactiveTrails = new array<IEntity>();
@@ -168,8 +162,8 @@ class BS_AnimatedBloodManager : GenericEntity
 			return;
 
 		// Spawn blood trail if character is valid
-		Print("SPAWNING BLOODTRAIL");
-		SpawnBloodTrail(character, damage);
+		//Print("SPAWNING BLOODTRAIL");
+		SpawnBloodTrail(character);
 	}
 
 	bool coinflip() // A randomizer with a funny name.
@@ -180,16 +174,7 @@ class BS_AnimatedBloodManager : GenericEntity
 	void failSafe()
 	{
 		currentDropled = 0;
-		currentWallsplatter = 0;
-		currentTrail = 0;
-		currentPool = 0;
-
 		deathNoteWipe();
-
-		if (allDecals && !allDecals.IsEmpty())
-		{
-			RemoveDecals(); // Now only removes expired decals
-		}
 	}
 
 	void DecalArrayWipe()
@@ -197,31 +182,25 @@ class BS_AnimatedBloodManager : GenericEntity
 		GetGame().GetCallqueue().Remove(RemoveDecals);
 		World tmpWorld = GetGame().GetWorld();
 
-		if (!allDecals || allDecals.IsEmpty() || !decalSpawnTimes)
+		if (!allDecals || allDecals.IsEmpty())
 			return;
-
-		float currentTime = GetGame().GetWorld().GetWorldTime();
 
 		for (int i = allDecals.Count() - 1; i >= 0; i--)
 		{
-			float spawnTime;
-			if (!decalSpawnTimes.Find(i, spawnTime))
-				continue;
+			Decal decal = allDecals.Get(i);
+			if (decal)
+				tmpWorld.RemoveDecal(decal);
 
-			if ((currentTime - spawnTime) >= defaultLifeTimeMilSec / 1000) // Convert ms to seconds
-			{
-				Decal decal = allDecals.Get(i);
-				if (decal)
-					tmpWorld.RemoveDecal(decal);
-
-				allDecals.Remove(i);
-				decalSpawnTimes.Remove(i);
-			}
+			allDecals.Remove(i);
 		}
+	
+		//Print(allDecals.Count()); Array size check
+		
 	}
 
-	void SpawnDecal(TraceParam traceParam, EDecalType type, vector origin, vector projection, float nearClip, float farClip, float angle, float size, float alphaTestValue = -1, float alphaMulValue = -1, int lifetime = -1)
+	void SpawnDecal(TraceParam traceParam, EDecalType type, vector origin, vector projection, float nearClip, float farClip, float angle, float size, float alphaTestValue = -1, float alphaMulValue = -1, int lifetime = defaultLifeTime)
 	{
+	
 		if (!traceParam || !traceParam.TraceEnt)
 			return;
 
@@ -236,8 +215,8 @@ class BS_AnimatedBloodManager : GenericEntity
 		if (!refResources || refResources.IsEmpty())
 			return;
 
-		if (lifetime == -1)
-			lifetime = defaultLifeTimeMilSec / 1000; // Convert ms to seconds
+		if (lifetime != -1)
+			lifetime = defaultLifeTime;
 
 		int randomMaterialIndex = Math.RandomIntInclusive(0, refResources.Count() - 1);
 		if (refResources.Count() > 1)
@@ -268,64 +247,33 @@ class BS_AnimatedBloodManager : GenericEntity
 		int decalIndex = allDecals.Find(decal);
 		if (decalIndex != -1)
 		{
-			decalSpawnTimes.Set(decalIndex, GetGame().GetWorld().GetWorldTime());
-			GetGame().GetCallqueue().CallLater(RemoveDecals, lifetime * 1000, false, decalIndex);
+			GetGame().GetCallqueue().CallLater(RemoveDecals, defaultLifeTimeMilSec, false, decalIndex);
 		}
+	
 	}
 
 	void RemoveDecals(int decalID = -1)
 	{
-		if (!allDecals || allDecals.IsEmpty() || !decalSpawnTimes)
+		//Print("REMOVE DECALS"); Remove decal func check
+		if (!allDecals || allDecals.IsEmpty())
 			return;
 
 		World tmpWorld = GetGame().GetWorld();
 		if (!tmpWorld)
 			return;
-
-		float currentTime = GetGame().GetWorld().GetWorldTime();
-
-		// If decalID is -1, remove only expired decals
-		if (decalID == -1)
-		{
-			for (int i = allDecals.Count() - 1; i >= 0; i--)
-			{
-				float spawnTime;
-				if (!decalSpawnTimes.Find(i, spawnTime))
-					continue;
-
-				if ((currentTime - spawnTime) >= defaultLifeTimeMilSec / 1000) // Convert ms to seconds
-				{
-					Decal decal = allDecals.Get(i);
-					if (decal)
-						tmpWorld.RemoveDecal(decal);
-
-					allDecals.Remove(i);
-					decalSpawnTimes.Remove(i);
-				}
-			}
-			return;
-		}
-
+		
 		// Ensure decalID is within bounds and check its lifetime
 		if (decalID < 0 || decalID >= allDecals.Count())
 			return;
 
-		float spawnTime;
-		if (!decalSpawnTimes.Find(decalID, spawnTime))
-			return;
+		Decal decal = allDecals.Get(decalID);
+		if (decal)
+			tmpWorld.RemoveDecal(decal);
 
-		if ((currentTime - spawnTime) >= defaultLifeTimeMilSec / 1000) // Convert ms to seconds
-		{
-			Decal decal = allDecals.Get(decalID);
-			if (decal)
-				tmpWorld.RemoveDecal(decal);
-
-			allDecals.Set(decalID, null);
-			decalSpawnTimes.Remove(decalID);
-		}
+		allDecals.Set(decalID, null);
 	}
 
-	void SpawnBloodTrail(IEntity character, float damage)
+	void SpawnBloodTrail(IEntity character)
 	{
 		// Ensure character is valid
 		if (!character)
@@ -350,7 +298,10 @@ class BS_AnimatedBloodManager : GenericEntity
 		bool shouldBleed = charDamageManagerComponent.IsBleeding() && (speed > 0.1);
 
 		// Schedule another blood check
-		GetGame().GetCallqueue().CallLater(isBleedingX, 350, false, character, damage);
+		if (charDamageManagerComponent.IsBleeding())
+		{
+			GetGame().GetCallqueue().CallLater(isBleedingX, 350, false, character);
+		}
 
 		// Exit if not bleeding
 		if (!shouldBleed)
