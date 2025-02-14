@@ -16,9 +16,7 @@ modded class SCR_CharacterDamageManagerComponent : ScriptedDamageManagerComponen
     protected vector m_lastHitDirection;
     protected int m_lastHitNodeId;
 
-    // Internal State Flags
-    protected bool alreadyDestroyed = false;
-    protected float timerBetweenSplatters;
+   
 
 	override void OnInit(IEntity owner)
 	{
@@ -65,7 +63,6 @@ modded class SCR_CharacterDamageManagerComponent : ScriptedDamageManagerComponen
 
 		if (newLifeState == ECharacterLifeState.DEAD)
 		{
-			RemoveBleedingParticleEffect(lastHitzone);
 			GetGame().GetCallqueue().CallLater(animatedBloodManager.deathNote, 500, false, currentCharacter, false);
 			GetGame().GetCallqueue().CallLater(animatedBloodManager.SpawnGroundBloodpool, 3500, false, currentCharacter, m_lastHitPosition, m_lastHitDirection, m_lastHitNodeId);
 		}
@@ -137,97 +134,6 @@ modded class SCR_CharacterDamageManagerComponent : ScriptedDamageManagerComponen
 			GetGame().GetCallqueue().CallLater(animatedBloodManager.isBleedingX, 500, false, currentCharacter);
 		}
 	}
-
-	//------------------------------------------------------------------------------------------------
-	override void RemoveBleedingParticleEffect(HitZone hitZone)
-	{
-		if (!m_mBleedingParticles)
-			return;
-
-		ParticleEffectEntity particleEmitter = m_mBleedingParticles.Get(hitZone);
-		if (particleEmitter)
-		{
-			particleEmitter.StopEmission();
-			m_mBleedingParticles.Remove(hitZone);
-		}
-
-		if (m_mBleedingParticles.IsEmpty())
-			m_mBleedingParticles = null;
-	}
-	override void CreateBleedingParticleEffect(notnull HitZone hitZone, int colliderDescriptorIndex)
-	{
-		if (System.IsConsoleApp())
-			return;
-
-		// Play Bleeding particle
-		if (m_sBleedingParticle.IsEmpty())
-			return;
-
-		RemoveBleedingParticleEffect(hitZone);
-		RemoveBleedingParticleEffect(lastHitzone);
-		// TODO: Blood traces on ground that should be left regardless of clothing, perhaps just delayed
-		SCR_CharacterHitZone characterHitZone = SCR_CharacterHitZone.Cast(hitZone);
-		//if (characterHitZone.IsCovered())
-		//	return;
-
-		array<HitZone> groupHitZones = {};
-		GetHitZonesOfGroup(characterHitZone.GetHitZoneGroup(), groupHitZones);
-		float bleedingRate;
-
-		foreach (HitZone groupHitZone : groupHitZones)
-		{
-			SCR_RegeneratingHitZone regenHitZone = SCR_RegeneratingHitZone.Cast(groupHitZone);
-			if (regenHitZone)
-				bleedingRate +=	regenHitZone.GetHitZoneDamageOverTime(EDamageType.BLEEDING);
-		}
-
-		if (bleedingRate == 0 || m_fBleedingParticleRateScale == 0)
-			return;
-
-		// Get bone node
-		vector transform[4];
-		int boneIndex;
-		int boneNode;
-		if (!hitZone.TryGetColliderDescription(GetOwner(), colliderDescriptorIndex, transform, boneIndex, boneNode))
-			return;
-
-		// Create particle emitter
-		ParticleEffectEntitySpawnParams spawnParams();
-		spawnParams.Parent = GetOwner();
-		spawnParams.PivotID = boneNode;
-		ParticleEffectEntity particleEmitter = ParticleEffectEntity.SpawnParticleEffect(m_sBleedingParticle, spawnParams);
-		if (System.IsConsoleApp())
-			return;
-
-		if (!particleEmitter)
-		{
-			Print("Particle emitter: " + particleEmitter.ToString() + " There was a problem with creating the particle emitter: " + m_sBleedingParticle, LogLevel.WARNING);
-			return;
-		}
-
-		// Track particle emitter in array
-		if (!m_mBleedingParticles)
-			m_mBleedingParticles = new map<HitZone, ParticleEffectEntity>;
-
-		m_mBleedingParticles.Insert(hitZone, particleEmitter);
-		lastHitzone = hitZone;
-
-		// Play particles
-		Particles particles = particleEmitter.GetParticles();
-		if (particles)
-			particles.MultParam(-1, EmitterParam.BIRTH_RATE, bleedingRate * m_fBleedingParticleRateScale);
-		else
-			Print("Particle: " + particles.ToString() + " Bleeding particle likely not created properly: " + m_sBleedingParticle, LogLevel.WARNING);
-
-	}
-
-	override void RemoveBleedingFromArray(notnull HitZone hitZone)
-	{
-		super.RemoveBleedingFromArray(hitZone);
-
-		animatedBloodManager = BS_AnimatedBloodManager.GetInstance();
-	}
-
 }
 
 class DecalWrapper

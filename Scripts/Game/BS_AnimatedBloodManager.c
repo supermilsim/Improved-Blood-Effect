@@ -11,7 +11,7 @@ class BS_AnimatedBloodManager : GenericEntity
     protected static ref map<EDecalType, ref array<ResourceName>> materialsMap;
 
     // Blood Trail & Decal Management
-    protected ref array<Decal> allDecals;
+    protected ref map<Decal,float> allDecals;
     protected ref array<IEntity> deactiveTrails;
 
     // Decal Tracking
@@ -19,18 +19,20 @@ class BS_AnimatedBloodManager : GenericEntity
 
     // Colors & Lifetime
     protected int materialColor;
-    protected int defaultLifeTime = -1;
-    protected int defaultLifeTimeMilSec = 420000; // 7 minutes 420000 ms
+    protected const int defaultLifeTime = -1;
+    protected const int defaultLifeTimeMilSec = 420000; // 7 minutes 420000 ms
 
     // Blood Management Limits
-    protected const int maxDropled = 100;
+    protected const int maxDropled = 256;
     protected int currentDropled;
-    protected const int maxWallsplatter = 25;
-    protected int currentWallsplatter;
-    protected const int maxTrail = 250;
-    protected int currentTrail;
-    protected const int maxPool = 20;
-    protected int currentPool;
+	
+	// -TODO: find a better way to limit decals
+    //protected const int maxWallsplatter = 25;
+    //protected int currentWallsplatter;
+    //protected const int maxTrail = 1024;
+    //protected int currentTrail;
+    //protected const int maxPool = 96;
+    //protected int currentPool;
 
     // -------------------------------------------------------------------------------------------------
     // Singleton Management
@@ -73,9 +75,9 @@ class BS_AnimatedBloodManager : GenericEntity
 		if (!materialsMap)
 			materialsMap = new map<EDecalType, ref array<ResourceName>>();
 
-		allDecals = new array<Decal>();
+		allDecals = new map<Decal,float>();
 		deactiveTrails = new array<IEntity>();
-
+		
 		materialColor = Color.FromRGBA(128, 0, 0, 255).PackToInt();
 		LoadMaterialReferences();
 	}
@@ -171,31 +173,11 @@ class BS_AnimatedBloodManager : GenericEntity
 		return Math.RandomInt(0, 2) == 1; // Ensures correct boolean return
 	}
 
-	void failSafe()
+	void failSafe() // Prevents memory leaks
 	{
 		currentDropled = 0;
 		deathNoteWipe();
-	}
-
-	void DecalArrayWipe()
-	{
-		GetGame().GetCallqueue().Remove(RemoveDecals);
-		World tmpWorld = GetGame().GetWorld();
-
-		if (!allDecals || allDecals.IsEmpty())
-			return;
-
-		for (int i = allDecals.Count() - 1; i >= 0; i--)
-		{
-			Decal decal = allDecals.Get(i);
-			if (decal)
-				tmpWorld.RemoveDecal(decal);
-
-			allDecals.Remove(i);
-		}
-	
-		//Print(allDecals.Count()); Array size check
-		
+		RemoveDecals();
 	}
 
 	void SpawnDecal(TraceParam traceParam, EDecalType type, vector origin, vector projection, float nearClip, float farClip, float angle, float size, float alphaTestValue = -1, float alphaMulValue = -1, int lifetime = defaultLifeTime)
@@ -241,36 +223,33 @@ class BS_AnimatedBloodManager : GenericEntity
 		if (!decal)
 			return;
 
-		allDecals.Insert(decal);
+		allDecals.Insert(decal, GetGame().GetWorld().GetWorldTime());
 
-		// Store the timestamp of when the decal was created
-		int decalIndex = allDecals.Find(decal);
-		if (decalIndex != -1)
-		{
-			GetGame().GetCallqueue().CallLater(RemoveDecals, defaultLifeTimeMilSec, false, decalIndex);
-		}
 	
 	}
 
-	void RemoveDecals(int decalID = -1)
+	void RemoveDecals()
 	{
-		//Print("REMOVE DECALS"); Remove decal func check
 		if (!allDecals || allDecals.IsEmpty())
 			return;
 
 		World tmpWorld = GetGame().GetWorld();
 		if (!tmpWorld)
 			return;
-		
-		// Ensure decalID is within bounds and check its lifetime
-		if (decalID < 0 || decalID >= allDecals.Count())
-			return;
 
-		Decal decal = allDecals.Get(decalID);
-		if (decal)
-			tmpWorld.RemoveDecal(decal);
-
-		allDecals.Set(decalID, null);
+		float currentTime = GetGame().GetWorld().GetWorldTime();
+		foreach (Decal decal, float spawnTime : allDecals)
+		{
+			if ((currentTime - spawnTime) >= defaultLifeTimeMilSec) // check lifetime expired
+			{
+				if (decal)
+				{
+					allDecals.Remove(decal);
+					tmpWorld.RemoveDecal(decal);
+				}
+				
+			}
+		}
 	}
 
 	void SpawnBloodTrail(IEntity character)

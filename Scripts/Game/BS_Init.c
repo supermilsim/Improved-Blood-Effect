@@ -18,8 +18,8 @@ modded class SCR_BaseGameMode : BaseGameMode
         // Ensure animatedBloodManager is valid before scheduling functions
         if (animatedBloodManager)
         {
+			// it works fine. If it breaks, we're fucked.
             GetGame().GetCallqueue().CallLater(animatedBloodManager.failSafe, 30000, true); // Runs every 30 seconds 30000 ms
-            GetGame().GetCallqueue().CallLater(animatedBloodManager.DecalArrayWipe, 960000, true); // Runs every 16 minutes 960000 ms
         }
     }
 };
